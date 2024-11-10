@@ -11,6 +11,9 @@ public class LifeEngine
         private readonly int _width;
         private readonly int _height;
 
+        private Kernel _outerKernel = new Kernel("kernelOuter.png");
+        private Kernel _innerKernel = new Kernel("kernelInner.png");
+
         public LifeEngine(int width, int height)
         {   
             _width = width;
@@ -42,26 +45,56 @@ public class LifeEngine
         }
 
         private float GetNextAliveState(int x, int y)
-        {
-            float totalAliveness = 0f;
-            for (int j = -3; j < 4; j++){
-                for (int i = -3; i < 4; i++)
+        {   
+            // Convolve and normalize outer kernel
+            float outerKernelResult = 0;
+            for (int j = -8; j < 9; j++){
+                for (int i = -8; i < 9; i++)
                 {
-                    totalAliveness += GetAliveness(MCT(x + i, _width - 1), MCT(y + j, _height - 1));
+                    outerKernelResult += GetAliveness(MCT(x + i, _width - 1), MCT(y + j, _height - 1)) * _outerKernel.GetKernelValue(i, j);
                 }
             }
-            totalAliveness /= 49;
+            var outerKernelResultNormalized = outerKernelResult / _outerKernel.MaxValue;
 
-            return GetGrowth(totalAliveness);
+            // Convolve and normalize inner kernel
+            float innerKernelResult = 0;
+            for (int j = -1; j < 2; j++){
+                for (int i = -1; i < 2; i++)
+                {
+                    innerKernelResult += GetAliveness(MCT(x + i, _width - 1), MCT(y + j, _height - 1)) * _innerKernel.GetKernelValue(i, j);
+                }
+            }
+            var innerKernelResultNormalized = innerKernelResult / _innerKernel.MaxValue;
+
+            return GetGrowth(innerKernelResultNormalized, outerKernelResultNormalized);
         }
 
-        private float GetGrowth(float neighborAliveness)
+        private float GetGrowth(float innerKernel, float outerKernel)
         {   
-            if (neighborAliveness >= 5)
+            if (innerKernel >= 0.5){
+                if (outerKernel >= 0.26 && outerKernel <= 0.46)
+                {
+                    return 1f;
+                }
+                else
+                {
+                    return 0f;
+                }
+            }
+            else if (innerKernel < 0.5){
+                if (outerKernel >= 0.27 && outerKernel <= 0.36)
+                {
+                    return 1f;
+                }
+                else
+                {
+                    return 0f;
+                }
+            }
+            else 
             {
                 return 0f;
             }
-            return (float) (Math.Cos((neighborAliveness * 2 * Math.PI / 2.5f) - Math.PI) + 1f) / 2f;
         }
 
         public void RandomizeGame()
@@ -72,7 +105,7 @@ public class LifeEngine
             {
                 for (int x = 0; x < _width; x++)
                 {
-                    _prevGeneration[y, x] = rand.NextSingle();
+                    _prevGeneration[y, x] = rand.Next(0, 2);
                 }
             }
         }

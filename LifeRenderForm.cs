@@ -28,12 +28,12 @@ public class LifeRenderForm : Form
         Width = 800;
         Height = 800;
 
-        _scale = 4;
+        _scale = 2;
 
         _lifeEngine = new LifeEngine(Width/_scale, Height/_scale);
 
         renderTimer = new System.Windows.Forms.Timer();
-        renderTimer.Interval = 500; // Set interval to 16ms for ~60 FPS
+        renderTimer.Interval = 100; // Set interval to 16ms for ~60 FPS
         renderTimer.Tick += (sender, e) =>
         {   
             skControl.Invalidate(); // Triggers the PaintSurface event
