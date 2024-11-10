@@ -12,8 +12,9 @@ public class LifeEngine
         private readonly int _height;
         public int Generation = 0;
 
-        private Kernel _outerKernel = new Kernel("kernelOuter.png");
+        private Kernel _outerKernel = new Kernel("kernelOuterSmooth.png");
         private Kernel _innerKernel = new Kernel("kernelInner.png");
+        private Kernel _growthKernel = new Kernel("kernelInner.png");
 
         public LifeEngine(int width, int height)
         {   
@@ -49,8 +50,8 @@ public class LifeEngine
         {   
             // Convolve and normalize outer kernel
             float outerKernelResult = 0;
-            for (int j = -8; j < 9; j++){
-                for (int i = -8; i < 9; i++)
+            for (int j = -10; j < 11; j++){
+                for (int i = -10; i < 11; i++)
                 {
                     outerKernelResult += GetAliveness(MCT(x + i, _width - 1), MCT(y + j, _height - 1)) * _outerKernel.GetKernelValue(i, j);
                 }
@@ -67,13 +68,14 @@ public class LifeEngine
             }
             var innerKernelResultNormalized = innerKernelResult / _innerKernel.MaxValue;
 
-            return GetGrowth(innerKernelResultNormalized, outerKernelResultNormalized);
+            return GetSmoothGrowth(innerKernelResultNormalized, outerKernelResultNormalized);
         }
 
         private float GetGrowth(float innerKernel, float outerKernel)
         {   
+            // Non Edges
             if (innerKernel >= 0.5){
-                if (0.26 <= outerKernel && outerKernel <= 0.56)
+                if (0.26 <= outerKernel && outerKernel <= 0.39)
                 {
                     return 1f;
                 }
@@ -82,8 +84,9 @@ public class LifeEngine
                     return 0f;
                 }
             }
+            // Edges
             else if (innerKernel < 0.5){
-                if (0.27 <= outerKernel && outerKernel <= 0.36)
+                if (0.20 <= outerKernel && outerKernel <= 0.28)
                 {
                     return 1f;
                 }
@@ -98,17 +101,39 @@ public class LifeEngine
             }
         }
 
+        private float GetSmoothGrowth(float innerKernel, float outerKernel)
+        {
+            float growthKernelResult = 0;
+            for (int j = -1; j < 2; j++){
+                for (int i = -1; i < 2; i++)
+                {
+                    growthKernelResult += GetGrowth(innerKernel + 0.03f*j, outerKernel + 0.03f*i) * _growthKernel.GetKernelValue(i, j);
+                }
+            }
+            var growthKernelResultNormalized = growthKernelResult / _growthKernel.MaxValue;
+            return growthKernelResultNormalized;
+        }
+
         public void RandomizeGame()
         {
             var rand = new Random();
 
-            for (int y = 0; y < _height; y++)
+
+            // choose some seed spots
+            for (int i = 0; i < rand.Next(5,8); i++)
             {
-                for (int x = 0; x < _width; x++)
+                var y = rand.Next(10,_height - 10);
+                var x = rand.Next(10, _width - 10);
+                for (int j = -10; j < 11; j++)
                 {
-                    _prevGeneration[y, x] = rand.Next(0, 2);
+                    for (int k = -10; k < 11; k++)
+                    {
+                        _prevGeneration[y + j, x + k] = rand.Next(0, 2);
+                    }
                 }
             }
+
+            
         }
 
         public void Update()
