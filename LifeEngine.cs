@@ -75,7 +75,7 @@ public class LifeEngine
         {   
             // Non Edges
             if (innerKernel >= 0.5){
-                if (0.26 <= outerKernel && outerKernel <= 0.39)
+                if (0.21 <= outerKernel && outerKernel <= 0.41)
                 {
                     return 1f;
                 }
@@ -86,7 +86,7 @@ public class LifeEngine
             }
             // Edges
             else if (innerKernel < 0.5){
-                if (0.20 <= outerKernel && outerKernel <= 0.28)
+                if (0.27 <= outerKernel && outerKernel <= 0.36)
                 {
                     return 1f;
                 }
@@ -107,7 +107,7 @@ public class LifeEngine
             for (int j = -1; j < 2; j++){
                 for (int i = -1; i < 2; i++)
                 {
-                    growthKernelResult += GetGrowth(innerKernel + 0.03f*j, outerKernel + 0.03f*i) * _growthKernel.GetKernelValue(i, j);
+                    growthKernelResult += GetGrowth(innerKernel + 0.02f*j, outerKernel + 0.02f*i) * _growthKernel.GetKernelValue(i, j);
                 }
             }
             var growthKernelResultNormalized = growthKernelResult / _growthKernel.MaxValue;
