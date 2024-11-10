@@ -6,24 +6,17 @@ using SkiaSharp.Views.Desktop;
 namespace LifeSim;
 public class LifeEngine
     {
-        private SKBitmap _bitmapPrev;
-        private SKBitmap _bitmapNext;
+        private float[,] _prevGeneration;
+        private float[,] _nextGeneration;
         private readonly int _width;
         private readonly int _height;
-        private readonly SKColor _white = new SKColor(255, 255, 255);
-        private readonly SKColor _black = new SKColor(0, 0, 0);
 
         public LifeEngine(int width, int height)
         {   
-            _bitmapPrev = new SKBitmap(width, height, true);
-            _bitmapNext = new SKBitmap(width, height, true);
             _width = width;
             _height = height;
-
-            // default life start state
-            _bitmapPrev.Erase(_black);
-            _bitmapNext.Erase(_black);
-
+            _prevGeneration = new float[_height, _width];
+            _nextGeneration = new float[_height, _width];
             RandomizeGame();
         }
 
@@ -44,45 +37,31 @@ public class LifeEngine
             }
         }
 
-        private bool CheckIsAliveNext(SKBitmap bitmap, int x, int y)
+        private float GetAliveness(int x, int y){
+            return _prevGeneration[y, x];
+        }
+
+        private float GetNextAliveState(int x, int y)
         {
-            SKColor self = bitmap.GetPixel(x, y);
-
-            int aliveNeighbors = 0;
-            for (int j = -1; j < 2; j++)
-            {
-                for (int i = -1; i < 2; i++)
+            float totalAliveness = 0f;
+            for (int j = -3; j < 4; j++){
+                for (int i = -3; i < 4; i++)
                 {
-                    if (i == 0 && j == 0)
-                    {
-                        // skip self
-                        continue;
-                    }
-                    SKColor neighborCell = bitmap.GetPixel(MCT(x + i, _width-1), MCT(y + j, _height-1));
-                    if (neighborCell == _white)
-                    {
-                        aliveNeighbors += 1;
-                    }
+                    totalAliveness += GetAliveness(MCT(x + i, _width - 1), MCT(y + j, _height - 1));
                 }
             }
+            totalAliveness /= 49;
 
-            if (self == _white)
-            {
-                if (aliveNeighbors == 2 || aliveNeighbors == 3)
-                {
-                    return true;
-                }
-                else return false;
-            }
+            return GetGrowth(totalAliveness);
+        }
 
-            else
+        private float GetGrowth(float neighborAliveness)
+        {   
+            if (neighborAliveness >= 5)
             {
-                if (aliveNeighbors == 3)
-                {
-                    return true;
-                }
-                else return false;
+                return 0f;
             }
+            return (float) (Math.Cos((neighborAliveness * 2 * Math.PI / 2.5f) - Math.PI) + 1f) / 2f;
         }
 
         public void RandomizeGame()
@@ -93,8 +72,7 @@ public class LifeEngine
             {
                 for (int x = 0; x < _width; x++)
                 {
-                    var index = rand.Next(0, 2);
-                    _bitmapPrev.SetPixel(x, y, new[] {_white, _black}[index]);
+                    _prevGeneration[y, x] = rand.NextSingle();
                 }
             }
         }
@@ -105,27 +83,30 @@ public class LifeEngine
             {
                 for (int x = 0; x < _width; x++)
                 {   
-                    if (CheckIsAliveNext(_bitmapPrev, x, y) == true)
-                    {
-                        _bitmapNext.SetPixel(x, y, _white);
-                    }
-                    else {
-                        _bitmapNext.SetPixel(x, y, _black);
-                    }
+                    _nextGeneration[y, x] = GetNextAliveState(x, y);
                 }
             }
 
-            // shift frames back one ready for next update
-            _bitmapNext.CopyTo(_bitmapPrev);
-            _bitmapNext.Erase(_black);
+            // Shift contents of _nextGeneration into _prevGeneration
+            Array.Copy(_nextGeneration, _prevGeneration, _nextGeneration.Length);
         }
         
         public SKBitmap GetBitmap(int renderScale)
         {
             SKBitmap outputBitmap = new SKBitmap(_width*renderScale, _height*renderScale, true);
+            SKBitmap generationBitmap = new SKBitmap( _width, _height);
+            
+            for (int y = 0; y < _height; y++)
+            {
+                for (int x = 0; x < _width; x++)
+                {   
+                    var aliveness = _prevGeneration[y, x];
+                    var value = (byte)(aliveness * 255);
+                    generationBitmap.SetPixel(x, y, new SKColor(value, value, value));
+                }
+            }
 
-            SKFilterQuality quality = SKFilterQuality.None; // remains pixelated.
-            _bitmapPrev.ScalePixels(outputBitmap, quality); // modifies outputBitmap.
+            generationBitmap.ScalePixels(outputBitmap, SKFilterQuality.None);
 
             return outputBitmap;
         }
