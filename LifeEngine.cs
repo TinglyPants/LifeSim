@@ -10,6 +10,7 @@ public class LifeEngine
         private float[,] _nextGeneration;
         private readonly int _width;
         private readonly int _height;
+        public int Generation = 0;
 
         private Kernel _outerKernel = new Kernel("kernelOuter.png");
         private Kernel _innerKernel = new Kernel("kernelInner.png");
@@ -72,7 +73,7 @@ public class LifeEngine
         private float GetGrowth(float innerKernel, float outerKernel)
         {   
             if (innerKernel >= 0.5){
-                if (outerKernel >= 0.26 && outerKernel <= 0.46)
+                if (0.26 <= outerKernel && outerKernel <= 0.56)
                 {
                     return 1f;
                 }
@@ -82,7 +83,7 @@ public class LifeEngine
                 }
             }
             else if (innerKernel < 0.5){
-                if (outerKernel >= 0.27 && outerKernel <= 0.36)
+                if (0.27 <= outerKernel && outerKernel <= 0.36)
                 {
                     return 1f;
                 }
@@ -122,6 +123,7 @@ public class LifeEngine
 
             // Shift contents of _nextGeneration into _prevGeneration
             Array.Copy(_nextGeneration, _prevGeneration, _nextGeneration.Length);
+            Generation++;
         }
         
         public SKBitmap GetBitmap(int renderScale)

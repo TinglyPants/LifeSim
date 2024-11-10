@@ -45,6 +45,10 @@ public class LifeRenderForm : Form
     {
         SKCanvas canvas = e.Surface.Canvas;
         SKBitmap bitmap = _lifeEngine.GetBitmap(_scale);
+        using (var stream = File.Create($"images/{_lifeEngine.Generation}.png"))
+        {
+            bitmap.Encode(stream, SKEncodedImageFormat.Png, 100);
+        }
         canvas.DrawBitmap(bitmap, new SKPoint(0, 0));
         _lifeEngine.Update();
     }
